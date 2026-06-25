@@ -27,6 +27,21 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.per-file-ignores]
+# Domain models are pinned to `(str, Enum)` in the spec — don't auto-rewrite to StrEnum.
+"src/garden_agent/domain/models.py" = ["UP"]
+
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+  "integration: end-to-end tests that hit real external services (skipped in CI)",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/garden_agent"]

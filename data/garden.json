@@ -1,0 +1,38 @@
+{
+  "id": "g-001",
+  "location": "Paris, France",
+  "plants": [
+    {
+      "name": "Tom",
+      "plant_type": "tomato",
+      "growth_stage": "established",
+      "soil_type": "loamy",
+      "last_watered": "2026-06-23",
+      "notes": "Cherry tomato in the south bed."
+    },
+    {
+      "name": "Lav-1",
+      "plant_type": "lavender",
+      "growth_stage": "mature",
+      "soil_type": "sandy",
+      "last_watered": "2026-06-20",
+      "notes": "Drought tolerant; do not overwater."
+    },
+    {
+      "name": "Basil-A",
+      "plant_type": "basil",
+      "growth_stage": "seedling",
+      "soil_type": "loamy",
+      "last_watered": null,
+      "notes": "Newly planted, fragile."
+    },
+    {
+      "name": "Succ-1",
+      "plant_type": "succulent",
+      "growth_stage": "mature",
+      "soil_type": "well_draining",
+      "last_watered": "2026-06-18",
+      "notes": "On the patio table."
+    }
+  ]
+}

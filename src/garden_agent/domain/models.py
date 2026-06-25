@@ -1,13 +1,16 @@
 # src/garden_agent/domain/models.py
 
-from enum import Enum
 from datetime import date
-from pydantic import BaseModel, Field
+from enum import Enum
+
+from pydantic import BaseModel
+
 
 class GrowthStage(str, Enum):
     SEEDLING = "seedling"
     ESTABLISHED = "established"
     MATURE = "mature"
+
 
 class SoilType(str, Enum):
     SANDY = "sandy"
@@ -15,18 +18,21 @@ class SoilType(str, Enum):
     LOAMY = "loamy"
     WELL_DRAINING = "well_draining"
 
+
 class Plant(BaseModel):
     name: str
-    plant_type: str                    # "tomato", "succulent", "lavender"
+    plant_type: str  # "tomato", "succulent", "lavender"
     growth_stage: GrowthStage
     soil_type: SoilType
     last_watered: date | None = None
     notes: str = ""
 
+
 class Garden(BaseModel):
     id: str
-    location: str                      # used by weather adapter for geocoding
+    location: str  # used by weather adapter for geocoding
     plants: list[Plant]
+
 
 class WeatherForecast(BaseModel):
     date: date
@@ -36,16 +42,19 @@ class WeatherForecast(BaseModel):
     humidity_percent: float
     is_rain_expected: bool
 
+
 class WateringAction(BaseModel):
     plant_name: str
     amount_liters: float
-    time_of_day: str                   # "morning" or "evening"
-    reason: str                        # why — forces LLM to explain itself
+    time_of_day: str  # "morning" or "evening"
+    reason: str  # why — forces LLM to explain itself
+
 
 class DailyPlan(BaseModel):
     date: date
     actions: list[WateringAction]
-    skip_reason: str | None = None     # e.g. "rain forecast > 10mm"
+    skip_reason: str | None = None  # e.g. "rain forecast > 10mm"
+
 
 class WateringPlan(BaseModel):
     garden_id: str
