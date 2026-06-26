@@ -5,3 +5,7 @@
 __pycache__/
 *.py[cod]
 uv.lock
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml

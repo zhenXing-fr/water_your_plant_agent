@@ -32,12 +32,24 @@ select = ["E", "F", "I", "UP", "B"]
 "src/garden_agent/domain/models.py" = ["UP"]
 
 [tool.pytest.ini_options]
-addopts = "-q"
+addopts = "-q --cov=garden_agent --cov-report=term-missing --cov-report=html"
 testpaths = ["tests"]
 pythonpath = ["src"]
 markers = [
   "integration: end-to-end tests that hit real external services (skipped in CI)",
 ]
+
+[tool.coverage.run]
+branch = true
+source = ["garden_agent"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
 
 [build-system]
 requires = ["hatchling"]
