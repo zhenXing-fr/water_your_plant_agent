@@ -69,13 +69,23 @@ class FakeGardenRepository:
 
 
 class FakeLLMAdapter:
-    """Returns a canned response. Phase 2 will give it tool-call behaviour."""
+    """Returns canned responses. Supports a single string (repeated forever) or a
+    list (one entry per ``generate`` call, exhaustion raises ``AssertionError``)
+    so tests can script multi-turn tool-calling conversations.
+    """
 
-    def __init__(self, response: str = "") -> None:
-        self._response = response
+    def __init__(self, response: str | list[str] = "") -> None:
+        if isinstance(response, str):
+            self._responses: list[str] = [response]
+            self._cycle = True
+        else:
+            self._responses = list(response)
+            self._cycle = False
         self.call_count = 0
         self.last_prompt: str | None = None
         self.last_tools: list[dict[str, Any]] | None = None
+        self.prompts: list[str] = []
+        self.tools_history: list[list[dict[str, Any]] | None] = []
 
     def generate(
         self,
@@ -85,7 +95,17 @@ class FakeLLMAdapter:
         self.call_count += 1
         self.last_prompt = prompt
         self.last_tools = tools
-        return self._response
+        self.prompts.append(prompt)
+        self.tools_history.append(tools)
+        if self._cycle:
+            return self._responses[0]
+        idx = self.call_count - 1
+        if idx >= len(self._responses):
+            raise AssertionError(
+                f"FakeLLMAdapter exhausted after {len(self._responses)} "
+                f"scripted responses (call #{self.call_count})"
+            )
+        return self._responses[idx]
 
 
 # ---------------------------------------------------------------------------
