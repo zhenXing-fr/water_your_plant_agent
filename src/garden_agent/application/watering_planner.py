@@ -20,7 +20,7 @@ import json
 from datetime import date
 from typing import Any
 
-from garden_agent.application.tools import LLMResponseError, PLANNER_TOOLS
+from garden_agent.application.tools import PLANNER_TOOLS, LLMResponseError
 from garden_agent.domain.models import WateringPlan
 from garden_agent.domain.services import build_weekly_plan
 from garden_agent.ports.garden import GardenRepositoryPort
@@ -86,9 +86,7 @@ class WateringPlannerService:
     def create_plan_with_llm(self, garden_id: str, week_start: date) -> WateringPlan:
         """Drive a tool-calling loop against the LLM port until it returns a plan."""
         if self._llm is None:
-            raise RuntimeError(
-                "create_plan_with_llm requires an LLMPort; none was provided"
-            )
+            raise RuntimeError("create_plan_with_llm requires an LLMPort; none was provided")
 
         transcript: list[str] = [
             f"SYSTEM:\n{SYSTEM_PROMPT}",
@@ -115,8 +113,7 @@ class WateringPlannerService:
                 result = self._dispatch_tool(call)
                 call_id = call.get("id") or call.get("name", "tool")
                 transcript.append(
-                    f"TOOL_RESULT [{call_id}]:\n"
-                    f"{json.dumps(result, default=str, sort_keys=True)}"
+                    f"TOOL_RESULT [{call_id}]:\n{json.dumps(result, default=str, sort_keys=True)}"
                 )
 
         raise LLMResponseError(
@@ -143,9 +140,7 @@ class WateringPlannerService:
         except json.JSONDecodeError as exc:
             raise LLMResponseError(f"LLM did not return valid JSON: {raw!r}") from exc
         if not isinstance(data, dict):
-            raise LLMResponseError(
-                f"LLM response must be a JSON object, got {type(data).__name__}"
-            )
+            raise LLMResponseError(f"LLM response must be a JSON object, got {type(data).__name__}")
         return data
 
     def _dispatch_tool(self, call: dict[str, Any]) -> Any:

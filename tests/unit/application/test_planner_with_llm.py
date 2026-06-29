@@ -32,7 +32,6 @@ from garden_agent.application.watering_planner import (
 from garden_agent.domain.models import Garden, WateringPlan, WeatherForecast
 from tests.conftest import FakeGardenRepository, FakeLLMAdapter, FakeWeatherAdapter
 
-
 # ---------------------------------------------------------------------------
 # Helpers — keep the JSON envelopes the LLM is expected to emit out of the
 # tests' assertion bodies so each test reads as a scenario, not a fixture pile.

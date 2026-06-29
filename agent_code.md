@@ -235,7 +235,8 @@ uv add --dev <package>          # dev only
 | Phase | Name | Status | Key addition |
 |-------|------|--------|-------------|
 | 1 | Foundation | ✅ COMPLETE | uv · Pydantic models · Hexagonal arch · CI |
-| 2 | Tools & first agent | 🔲 Next | Anthropic SDK · tool calling · real adapters |
+| 1.5 | Test coverage | ✅ COMPLETE | pytest-cov · HTML report · `htmlcov/` |
+| 2 | Tools & first agent | ✅ COMPLETE | Slice 1 (planner loop + envelope) + Slice 2 (Claude / OpenWeather / JSON repo adapters + CLI) |
 | 3 | RAG & skills | 🔲 | ChromaDB · plant knowledge base · retrieval |
 | 4 | LangGraph orchestration | 🔲 | Graph nodes · multi-agent · human-in-the-loop |
 | 5 | Observability | 🔲 | Langfuse · tracing · cost tracking |
@@ -245,15 +246,39 @@ uv add --dev <package>          # dev only
 
 ---
 
-## 8. Phase 2 — Tools & First Agent (implement next)
+## 8. Phase 2 — Tools & First Agent (in progress)
 
 ### Goal
 Make the first real Claude API call. The agent receives the weather forecast and garden
 state as context, calls tools to retrieve them, and produces a `WateringPlan`.
 
+### 8.0 Current status (resume here tomorrow)
+
+**Slice 1 — ✅ DONE** (tool-calling loop with fakes, no network):
+- `src/garden_agent/application/tools.py` — `GET_WEATHER_TOOL`, `GET_GARDEN_TOOL`, `PLANNER_TOOLS`, `LLMResponseError`.
+- `src/garden_agent/application/watering_planner.py` — added `create_plan_with_llm(garden_id, week_start)`, `MAX_TOOL_ITERATIONS = 6`, `SYSTEM_PROMPT`, helpers `_initial_user_message`, `_parse_envelope`, `_dispatch_tool`.
+- Wire-protocol decision: LLM speaks a tiny JSON envelope, since `LLMPort.generate(...) -> str` (provider-agnostic):
+  - `{"tool_calls": [{"id": "...", "name": "...", "input": {...}}, ...]}`
+  - `{"final_plan": <WateringPlan JSON>}`
+  Each future adapter (Claude, LoRA) must emit this envelope.
+- `tests/conftest.py` — `FakeLLMAdapter` now accepts `str | list[str]` (scripted multi-turn), records `prompts` and `tools_history`.
+- `tests/unit/application/test_planner_with_llm.py` — 9 scenarios: happy path, immediate final plan, tool-result accumulation, missing LLM, invalid JSON, non-object JSON, unknown envelope keys, unknown tool, runaway loop hits `MAX_TOOL_ITERATIONS`.
+- **Suite: 37 passed, coverage 94.65%** (only `config.py` uncovered — will be exercised in Slice 2).
+
+**Slice 2 — ✅ DONE** (real adapters + CLI, all offline-testable):
+1. `src/garden_agent/adapters/garden/json_repo.py` — `JSONGardenRepository` with atomic `os.replace` writes, `GardenRepositoryError` for I/O failures, `KeyError` for id-miss.
+2. `src/garden_agent/adapters/weather/openweather.py` — `OpenWeatherAdapter` (httpx, injectable client + clock, in-memory `(location, days)` TTL cache, `WeatherError` translation of HTTP/JSON/schema failures).
+3. `src/garden_agent/adapters/llm/claude.py` — `ClaudeAdapter` (Anthropic SDK; one-shot per `generate` call; translates `tool_use` content blocks into the planner's `{"tool_calls": [...]}` envelope; text-only responses pass through verbatim; `LLMError` wraps every SDK exception).
+4. `src/garden_agent/main.py` — argparse CLI composition root: `python -m garden_agent.main --garden-id g-001 [--week-start YYYY-MM-DD] [--use-llm]`. Loads `Settings` via `get_settings()` (singleton), wires the three adapters, prints `WateringPlan` JSON to stdout.
+5. `src/garden_agent/config.py` — extended with `claude_max_tokens`, `openweather_cache_ttl_seconds`, and `get_settings()` lru-cached singleton.
+6. Tests added: `tests/unit/adapters/test_json_repo.py` (8), `tests/unit/adapters/test_openweather.py` (12, uses `httpx.MockTransport`), `tests/unit/adapters/test_claude_adapter.py` (10, uses a tiny dataclass fake SDK), `tests/unit/test_main.py` (9, CLI smoke + composition root). Integration: `tests/integration/test_openweather.py` (`@pytest.mark.integration`, auto-skips without `OPENWEATHER_API_KEY`).
+- **Suite: 76 passed, 1 skipped (integration), coverage 99.09%** — only the defensive temp-file cleanup branch in `json_repo.py` is uncovered.
+
+**Slice 3 — 🔲 Phase 3 next** (RAG & skills) — see §9.
+
 ### New dependencies to add
 ```bash
-uv add anthropic httpx
+uv add anthropic httpx   # both already pinned in pyproject.toml — verify only
 ```
 
 ### 8.1 OpenWeather adapter
@@ -802,7 +827,6 @@ Before starting any phase:
 
 - [ ] Read the relevant section (8–14) in this document fully
 - [ ] Run `uv run pytest` — all existing tests must pass before you add new code
-- [ ] Add new dependencies with `uv add <package>`
 - [ ] Create test file(s) before or alongside the implementation
 - [ ] Run `uv run ruff check src/ tests/` — fix all warnings
 - [ ] Run `uv run pytest` again — new + existing tests must pass
